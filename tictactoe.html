@@ -84,6 +84,27 @@
     #reset:hover {
       background-color: #333;
     }
+
+    #undo {
+      margin-top: 10px;
+      padding: 10px 30px;
+      font-size: 1rem;
+      font-family: 'Georgia', serif;
+      background-color: white;
+      color: black;
+      border: 2px solid black;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+
+    #undo:hover:not(:disabled) {
+      background-color: #eee;
+    }
+
+    #undo:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
   </style>
 </head>
 <body>
@@ -101,11 +122,13 @@
     <div class="cell" data-index="8"></div>
   </div>
   <button id="reset">New Game</button>
+  <button id="undo" disabled>Undo</button>
 
   <script>
     const cells = document.querySelectorAll('.cell');
     const status = document.getElementById('status');
     const resetBtn = document.getElementById('reset');
+    const undoBtn = document.getElementById('undo');
 
     const WINS = [
       [0,1,2],[3,4,5],[6,7,8], // rows
@@ -116,6 +139,7 @@
     let board = Array(9).fill(null);
     let currentPlayer = 'X';
     let gameOver = false;
+    let lastMove = null;
 
     function checkWinner() {
       for (const [a, b, c] of WINS) {
@@ -133,6 +157,8 @@
       board[idx] = currentPlayer;
       e.target.textContent = currentPlayer;
       e.target.classList.add('taken');
+      lastMove = { idx, player: currentPlayer };
+      undoBtn.disabled = false;
 
       const result = checkWinner();
       if (result === 'draw') {
@@ -147,6 +173,19 @@
       }
     }
 
+    function undo() {
+      if (!lastMove) return;
+      const { idx, player } = lastMove;
+      board[idx] = null;
+      cells[idx].textContent = '';
+      cells[idx].classList.remove('taken');
+      currentPlayer = player;
+      gameOver = false;
+      status.textContent = `Player ${currentPlayer}'s turn`;
+      lastMove = null;
+      undoBtn.disabled = true;
+    }
+
     function reset() {
       board = Array(9).fill(null);
       currentPlayer = 'X';
@@ -156,10 +195,13 @@
         cell.textContent = '';
         cell.classList.remove('taken');
       });
+      lastMove = null;
+      undoBtn.disabled = true;
     }
 
     cells.forEach(cell => cell.addEventListener('click', handleClick));
     resetBtn.addEventListener('click', reset);
+    undoBtn.addEventListener('click', undo);
   </script>
 </body>
 </html>
