@@ -3,7 +3,7 @@ name: Deploy GTD App to GitHub Pages
 on:
   push:
     branches:
-      - gtd
+      - claude/gtd
       - main
     paths:
       - 'gtd-app/**'
