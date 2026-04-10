@@ -33,6 +33,9 @@ interface GTDStore {
   addWeeklyReview: (notes: string) => WeeklyReview;
   getLastReview: () => WeeklyReview | undefined;
 
+  // Data management
+  importData: (data: { items: GTDItem[]; projects: Project[]; weeklyReviews: WeeklyReview[] }) => void;
+
   // Selectors
   getItemsByStatus: (status: GTDStatus) => GTDItem[];
   getItemsByProject: (projectId: string) => GTDItem[];
@@ -169,6 +172,10 @@ export const useGTDStore = create<GTDStore>()(
 
       getInboxCount: () => {
         return get().items.filter((item) => item.status === 'inbox').length;
+      },
+
+      importData: ({ items, projects, weeklyReviews }) => {
+        set({ items, projects, weeklyReviews });
       },
     }),
     {

@@ -11,6 +11,7 @@ import {
   CheckSquare,
   Menu,
   X,
+  Settings,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useGTDStore } from '../store/gtdStore';
@@ -25,6 +26,7 @@ const navItems = [
   { to: '/reference', label: 'Reference', icon: BookOpen },
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/weekly-review', label: 'Weekly Review', icon: CheckSquare },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 interface LayoutProps {

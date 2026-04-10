@@ -9,6 +9,7 @@ import SomedayMaybe from './pages/SomedayMaybe';
 import Reference from './pages/Reference';
 import CalendarView from './pages/CalendarView';
 import WeeklyReview from './pages/WeeklyReview';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/reference" element={<Reference />} />
           <Route path="/calendar" element={<CalendarView />} />
           <Route path="/weekly-review" element={<WeeklyReview />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
     </HashRouter>
