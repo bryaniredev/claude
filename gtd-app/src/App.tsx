@@ -10,6 +10,7 @@ import Reference from './pages/Reference';
 import CalendarView from './pages/CalendarView';
 import WeeklyReview from './pages/WeeklyReview';
 import Settings from './pages/Settings';
+import IvyLee from './pages/IvyLee';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/inbox" element={<Inbox />} />
+          <Route path="/ivy-lee" element={<IvyLee />} />
           <Route path="/next-actions" element={<NextActions />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/waiting-for" element={<WaitingFor />} />

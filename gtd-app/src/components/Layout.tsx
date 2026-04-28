@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useGTDStore } from '../store/gtdStore';
@@ -19,6 +20,7 @@ import { useGTDStore } from '../store/gtdStore';
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/inbox', label: 'Inbox', icon: Inbox, badge: true },
+  { to: '/ivy-lee', label: 'Ivy Lee Method', icon: Sparkles },
   { to: '/next-actions', label: 'Next Actions', icon: Zap },
   { to: '/projects', label: 'Projects', icon: FolderKanban },
   { to: '/waiting-for', label: 'Waiting For', icon: Clock },
