@@ -208,6 +208,7 @@ function SortableTask({
   onDone,
   onUndoDone,
   onBacklog,
+  onDelete,
   onOpenResearch,
   isDraggingActive,
 }: {
@@ -216,6 +217,7 @@ function SortableTask({
   onDone: () => void;
   onUndoDone: () => void;
   onBacklog: () => void;
+  onDelete: () => void;
   onOpenResearch: () => void;
   isDraggingActive: boolean;
 }) {
@@ -308,13 +310,22 @@ function SortableTask({
       {/* Action buttons */}
       <div className="flex items-center gap-0.5 shrink-0">
         {isDone ? (
-          <button
-            onClick={onUndoDone}
-            className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 active:bg-gray-100 transition-colors"
-            aria-label="Undo done"
-          >
-            <RotateCcw size={17} />
-          </button>
+          <>
+            <button
+              onClick={onUndoDone}
+              className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 active:bg-gray-100 transition-colors"
+              aria-label="Undo done"
+            >
+              <RotateCcw size={17} />
+            </button>
+            <button
+              onClick={onDelete}
+              className="w-10 h-10 flex items-center justify-center rounded-xl text-red-400 active:bg-red-50 transition-colors"
+              aria-label="Delete task"
+            >
+              <Trash2 size={17} />
+            </button>
+          </>
         ) : (
           <>
             <button
@@ -538,6 +549,7 @@ export default function IvyLee() {
                     onDone={() => markDone(item.id)}
                     onUndoDone={() => undoDone(item.id)}
                     onBacklog={() => moveToBacklog(item.id)}
+                    onDelete={() => deleteItem(item.id)}
                     onOpenResearch={() => setResearchItem(item)}
                   />
                 ))}
@@ -561,6 +573,7 @@ export default function IvyLee() {
                   onDone={() => markDone(item.id)}
                   onUndoDone={() => undoDone(item.id)}
                   onBacklog={() => moveToBacklog(item.id)}
+                  onDelete={() => deleteItem(item.id)}
                   onOpenResearch={() => setResearchItem(item)}
                 />
               ))}
