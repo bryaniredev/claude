@@ -18,6 +18,10 @@ export interface Prefs {
   soundEnabled: boolean;
   /** Hour of the day after which the Dashboard nudges you to do the evening shutdown. */
   shutdownHour: number;
+  /** Weekday the Guide suggests your Weekly Review (0 = Sunday). */
+  weeklyReviewDay: number;
+  /** Which page the app opens on. */
+  startPage: 'dashboard' | 'guide';
 }
 
 export const DEFAULT_PREFS: Prefs = {
@@ -32,6 +36,8 @@ export const DEFAULT_PREFS: Prefs = {
   streakWeekdays: [1, 2, 3, 4, 5],
   soundEnabled: true,
   shutdownHour: 17,
+  weeklyReviewDay: 5,
+  startPage: 'dashboard',
 };
 
 interface PrefsStore extends Prefs {

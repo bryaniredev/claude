@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   DndContext,
   closestCenter,
@@ -37,7 +37,7 @@ import { usePrefsStore } from '../store/prefsStore';
 import { useToday } from '../hooks/useNow';
 import { completePriority, planNewPriority, startFocus, undoPriority } from '../lib/tasks';
 import { daysOnList, goalForGtdItem, priorityStreak } from '../lib/selectors';
-import { hhmmLabel, minutesToLabel, shiftDay } from '../lib/dates';
+import { hhmmLabel, minutesToLabel, shiftDay, todayKey } from '../lib/dates';
 import { planText, shareText } from '../lib/share';
 import PriorityDetailSheet from '../components/PriorityDetailSheet';
 import NextActionPicker from '../components/NextActionPicker';
@@ -173,10 +173,12 @@ export default function GtdIvyLee() {
   const goals = useHorizonsStore((s) => s.goals);
   const { defaultFocusMinutes, streakWeekdays, partnerName } = usePrefsStore();
 
-  const [view, setView] = useState<'list' | 'timeline'>('list');
+  // Deep links (used by the Guide): ?view=timeline, ?open=<id>, ?pick=1
+  const [params] = useSearchParams();
+  const [view, setView] = useState<'list' | 'timeline'>(params.get('view') === 'timeline' ? 'timeline' : 'list');
   const [input, setInput] = useState('');
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [pickerDate, setPickerDate] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(params.get('open'));
+  const [pickerDate, setPickerDate] = useState<string | null>(params.get('pick') === '1' ? todayKey() : null);
   const [showTomorrow, setShowTomorrow] = useState(false);
   const [toast, setToast] = useState('');
 

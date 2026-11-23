@@ -19,6 +19,7 @@ const Unstuck = lazy(() => import('./pages/Unstuck'));
 const Shutdown = lazy(() => import('./pages/Shutdown'));
 const Progress = lazy(() => import('./pages/Progress'));
 const Goals = lazy(() => import('./pages/Goals'));
+const Guide = lazy(() => import('./pages/Guide'));
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         <Suspense fallback={<div className="p-8 text-center text-sm text-gray-400">Loading…</div>}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/guide" element={<Guide />} />
           <Route path="/inbox" element={<Inbox />} />
           <Route path="/gtd-ivy-lee" element={<GtdIvyLee />} />
           <Route path="/focus" element={<Focus />} />

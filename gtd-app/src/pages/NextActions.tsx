@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Zap, Check, Trash2, ChevronDown, ChevronUp, Filter, LayoutGrid, List, Compass, Plus } from 'lucide-react';
 import { useGTDStore } from '../store/gtdStore';
 import { useDailyStore, itemsForDay, DAILY_LIMIT } from '../store/dailyStore';
@@ -24,7 +25,8 @@ export default function NextActions() {
   const plannedIds = new Set(daily.filter((d) => d.status === 'active').map((d) => d.gtdItemId));
   const todayFull = itemsForDay(daily, today).length >= DAILY_LIMIT;
   const [view, setView] = useState<'list' | 'matrix'>('list');
-  const [showWhatNow, setShowWhatNow] = useState(false);
+  const [params] = useSearchParams();
+  const [showWhatNow, setShowWhatNow] = useState(params.get('whatnow') === '1');
 
   const [filterContext, setFilterContext] = useState('');
   const [filterEnergy, setFilterEnergy] = useState<EnergyLevel | ''>('');
