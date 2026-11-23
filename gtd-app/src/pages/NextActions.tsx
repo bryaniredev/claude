@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import { Zap, Check, Trash2, ChevronDown, ChevronUp, Filter } from 'lucide-react';
+import { Zap, Check, Trash2, ChevronDown, ChevronUp, Filter, LayoutGrid, List, Compass, Plus } from 'lucide-react';
 import { useGTDStore } from '../store/gtdStore';
+import { useDailyStore, itemsForDay, DAILY_LIMIT } from '../store/dailyStore';
+import { useToday } from '../hooks/useNow';
+import { completeNextAction, planNextAction } from '../lib/tasks';
+import EisenhowerMatrix, { FlagToggles } from '../components/EisenhowerMatrix';
+import WhatNowPicker from '../components/WhatNowPicker';
 import type { GTDItem, EnergyLevel } from '../types';
 import { CONTEXTS } from '../types';
 import { format } from 'date-fns';
@@ -12,8 +17,14 @@ const ENERGY_COLORS: Record<EnergyLevel, string> = {
 };
 
 export default function NextActions() {
-  const { items, projects, completeItem, deleteItem } = useGTDStore();
+  const { items, projects, deleteItem } = useGTDStore();
   const actions = items.filter((i) => i.status === 'next-action');
+  const today = useToday();
+  const daily = useDailyStore((s) => s.items);
+  const plannedIds = new Set(daily.filter((d) => d.status === 'active').map((d) => d.gtdItemId));
+  const todayFull = itemsForDay(daily, today).length >= DAILY_LIMIT;
+  const [view, setView] = useState<'list' | 'matrix'>('list');
+  const [showWhatNow, setShowWhatNow] = useState(false);
 
   const [filterContext, setFilterContext] = useState('');
   const [filterEnergy, setFilterEnergy] = useState<EnergyLevel | ''>('');
@@ -56,6 +67,7 @@ export default function NextActions() {
 
       {/* Filters */}
       <div className="mb-4">
+        <div className="flex items-center gap-1 flex-wrap">
         <button
           className="btn-ghost py-1.5 px-3 text-xs gap-1"
           onClick={() => setShowFilters((v) => !v)}
@@ -66,6 +78,36 @@ export default function NextActions() {
             <span className="badge bg-blue-100 text-blue-700 ml-1">active</span>
           )}
         </button>
+        <button
+          className={`btn-ghost py-1.5 px-3 text-xs gap-1 ${showWhatNow ? 'bg-teal-50 text-teal-700' : ''}`}
+          onClick={() => setShowWhatNow((v) => !v)}
+        >
+          <Compass size={14} /> What now?
+        </button>
+        <div className="ml-auto flex p-0.5 bg-gray-100 rounded-lg">
+          {(
+            [
+              ['list', 'List', List],
+              ['matrix', 'Matrix', LayoutGrid],
+            ] as const
+          ).map(([key, label, Icon]) => (
+            <button
+              key={key}
+              onClick={() => setView(key)}
+              className={`h-8 px-2.5 rounded-md text-xs font-semibold flex items-center gap-1 ${
+                view === key ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'
+              }`}
+            >
+              <Icon size={13} /> {label}
+            </button>
+          ))}
+        </div>
+        </div>
+        {showWhatNow && (
+          <div className="mt-2">
+            <WhatNowPicker />
+          </div>
+        )}
         {showFilters && (
           <div className="mt-2 flex flex-wrap gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
             <select
@@ -106,7 +148,23 @@ export default function NextActions() {
       </div>
 
       {/* List */}
-      {filtered.length === 0 ? (
+      {view === 'matrix' && filtered.length > 0 ? (
+        <>
+          <p className="text-xs text-gray-500 mb-3">
+            Tag each action Urgent and/or Important. Pick today's priorities from <b>Do first</b> and <b>Schedule</b>.
+          </p>
+          <EisenhowerMatrix
+            items={filtered}
+            renderAction={(item) => (
+              <PlanButton
+                planned={plannedIds.has(item.id)}
+                canPlan={!todayFull}
+                onPlan={() => planNextAction(item.id, today)}
+              />
+            )}
+          />
+        </>
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Zap size={48} className="text-gray-200 mx-auto mb-4" />}
           title={actions.length === 0 ? 'No next actions' : 'No results for this filter'}
@@ -126,8 +184,11 @@ export default function NextActions() {
               projectTitle={getProjectTitle(item.projectId)}
               expanded={expandedId === item.id}
               onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
-              onComplete={() => completeItem(item.id)}
+              onComplete={() => completeNextAction(item.id)}
               onDelete={() => deleteItem(item.id)}
+              planned={plannedIds.has(item.id)}
+              canPlan={!todayFull}
+              onPlan={() => planNextAction(item.id, today)}
             />
           ))}
         </div>
@@ -147,8 +208,11 @@ export default function NextActions() {
                     projectTitle={getProjectTitle(item.projectId)}
                     expanded={expandedId === item.id}
                     onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                    onComplete={() => completeItem(item.id)}
+                    onComplete={() => completeNextAction(item.id)}
                     onDelete={() => deleteItem(item.id)}
+                    planned={plannedIds.has(item.id)}
+                    canPlan={!todayFull}
+                    onPlan={() => planNextAction(item.id, today)}
                   />
                 ))}
               </div>
@@ -160,6 +224,24 @@ export default function NextActions() {
   );
 }
 
+function PlanButton({ planned, canPlan, onPlan }: { planned: boolean; canPlan: boolean; onPlan: () => void }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!planned) onPlan();
+      }}
+      disabled={planned || !canPlan}
+      className={`h-8 px-2 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 ${
+        planned ? 'bg-green-50 text-green-600' : canPlan ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-gray-50 text-gray-300'
+      }`}
+      title={planned ? "On today's GTD Ivy Lee list" : canPlan ? "Add to today's GTD Ivy Lee list" : "Today's list is full (6)"}
+    >
+      {planned ? <Check size={13} /> : <Plus size={13} />} Today
+    </button>
+  );
+}
+
 function ActionItem({
   item,
   projectTitle,
@@ -167,6 +249,9 @@ function ActionItem({
   onToggle,
   onComplete,
   onDelete,
+  planned,
+  canPlan,
+  onPlan,
 }: {
   item: GTDItem;
   projectTitle: string | null;
@@ -174,6 +259,9 @@ function ActionItem({
   onToggle: () => void;
   onComplete: () => void;
   onDelete: () => void;
+  planned: boolean;
+  canPlan: boolean;
+  onPlan: () => void;
 }) {
   return (
     <div className="card overflow-hidden">
@@ -200,6 +288,7 @@ function ActionItem({
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <PlanButton planned={planned} canPlan={canPlan} onPlan={onPlan} />
           <button
             onClick={onDelete}
             className="btn-ghost p-1.5 text-gray-300 hover:text-red-500 transition-colors"
@@ -214,7 +303,10 @@ function ActionItem({
       {expanded && (
         <div className="px-4 pb-4 pt-0 border-t border-gray-100 text-xs text-gray-500 space-y-1 bg-gray-50">
           {item.notes && <p className="mt-2">{item.notes}</p>}
-          <p>Added {format(new Date(item.createdAt), 'MMM d, yyyy')}</p>
+          <p className={item.notes ? '' : 'mt-2'}>Added {format(new Date(item.createdAt), 'MMM d, yyyy')}</p>
+          <div className="pt-1">
+            <FlagToggles item={item} />
+          </div>
           <div className="flex gap-2 mt-2">
             <button
               onClick={onComplete}

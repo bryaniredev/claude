@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   Inbox,
   Zap,
@@ -13,22 +13,65 @@ import {
   X,
   Settings,
   Sparkles,
+  ListChecks,
+  Timer,
+  LifeBuoy,
+  Moon,
+  TrendingUp,
+  Mountain,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGTDStore } from '../store/gtdStore';
+import { useDailyStore, itemsForDay } from '../store/dailyStore';
+import { useToday } from '../hooks/useNow';
+import { AppWatchers, TimerChip } from './FocusWatcher';
 
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/inbox', label: 'Inbox', icon: Inbox, badge: true },
-  { to: '/ivy-lee', label: 'Ivy Lee Method', icon: Sparkles },
-  { to: '/next-actions', label: 'Next Actions', icon: Zap },
-  { to: '/projects', label: 'Projects', icon: FolderKanban },
-  { to: '/waiting-for', label: 'Waiting For', icon: Clock },
-  { to: '/someday-maybe', label: 'Someday / Maybe', icon: Star },
-  { to: '/reference', label: 'Reference', icon: BookOpen },
-  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { to: '/weekly-review', label: 'Weekly Review', icon: CheckSquare },
-  { to: '/settings', label: 'Settings', icon: Settings },
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof Inbox;
+  end?: boolean;
+  badge?: 'inbox' | 'today';
+};
+
+const navGroups: { title?: string; items: NavItem[] }[] = [
+  {
+    title: 'Today',
+    items: [
+      { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+      { to: '/gtd-ivy-lee', label: 'GTD Ivy Lee', icon: ListChecks, badge: 'today' },
+      { to: '/focus', label: 'Focus', icon: Timer },
+      { to: '/unstuck', label: "I'm Stuck", icon: LifeBuoy },
+      { to: '/shutdown', label: 'Evening Shutdown', icon: Moon },
+    ],
+  },
+  {
+    title: 'Capture & Organise',
+    items: [
+      { to: '/inbox', label: 'Inbox', icon: Inbox, badge: 'inbox' },
+      { to: '/next-actions', label: 'Next Actions', icon: Zap },
+      { to: '/projects', label: 'Projects', icon: FolderKanban },
+      { to: '/waiting-for', label: 'Waiting For', icon: Clock },
+      { to: '/someday-maybe', label: 'Someday / Maybe', icon: Star },
+      { to: '/reference', label: 'Reference', icon: BookOpen },
+      { to: '/calendar', label: 'Calendar', icon: CalendarDays },
+    ],
+  },
+  {
+    title: 'Reflect',
+    items: [
+      { to: '/weekly-review', label: 'Weekly Review', icon: CheckSquare },
+      { to: '/progress', label: 'Progress', icon: TrendingUp },
+      { to: '/goals', label: 'Goals & Horizons', icon: Mountain },
+    ],
+  },
+  {
+    title: 'More',
+    items: [
+      { to: '/ivy-lee', label: 'Ivy Lee Classic', icon: Sparkles },
+      { to: '/settings', label: 'Settings', icon: Settings },
+    ],
+  },
 ];
 
 interface LayoutProps {
@@ -37,10 +80,18 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const { pathname } = useLocation();
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
   const inboxCount = useGTDStore((s) => s.getInboxCount());
+  const today = useToday();
+  const todayLeft = useDailyStore((s) => itemsForDay(s.items, today).filter((i) => i.status === 'active').length);
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <AppWatchers />
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -73,34 +124,49 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-          {navItems.map(({ to, label, icon: Icon, badge, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`
-              }
-            >
-              <Icon size={18} />
-              <span className="flex-1">{label}</span>
-              {badge && inboxCount > 0 && (
-                <span className="badge bg-blue-100 text-blue-700 font-semibold">
-                  {inboxCount}
-                </span>
+        <nav className="flex-1 overflow-y-auto py-3 px-3">
+          {navGroups.map((group) => (
+            <div key={group.title} className="mb-3">
+              {group.title && (
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                  {group.title}
+                </p>
               )}
-            </NavLink>
+              <div className="space-y-0.5">
+                {group.items.map(({ to, label, icon: Icon, badge, end }) => {
+                  const count = badge === 'inbox' ? inboxCount : badge === 'today' ? todayLeft : 0;
+                  return (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={end}
+                      onClick={() => setSidebarOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`
+                      }
+                    >
+                      <Icon size={18} />
+                      <span className="flex-1">{label}</span>
+                      {count > 0 && (
+                        <span className="badge bg-blue-100 text-blue-700 font-semibold">{count}</span>
+                      )}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
           ))}
         </nav>
 
         <div className="px-4 py-3 border-t border-gray-100">
-          <p className="text-xs text-gray-400 text-center">Based on David Allen's GTD®</p>
+          <div className="flex justify-center mb-2">
+            <TimerChip onClick={() => setSidebarOpen(false)} />
+          </div>
+          <p className="text-xs text-gray-400 text-center">Based on David Allen's GTD® & the Ivy Lee Method</p>
         </div>
       </aside>
 
@@ -111,10 +177,11 @@ export default function Layout({ children }: LayoutProps) {
           <button className="btn-ghost p-1" onClick={() => setSidebarOpen(true)}>
             <Menu size={20} />
           </button>
-          <span className="font-semibold text-gray-900">Let's Get Things Done</span>
+          <span className="font-semibold text-gray-900 flex-1">Let's Get Things Done</span>
+          <TimerChip />
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <main ref={mainRef} className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
