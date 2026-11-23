@@ -1,5 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
+  ListChecks,
+  Timer,
+  Flame,
+  Moon,
+  AlertTriangle,
+  Repeat,
   Inbox,
   Zap,
   FolderKanban,
@@ -12,10 +18,125 @@ import {
 } from 'lucide-react';
 import { useGTDStore } from '../store/gtdStore';
 import { differenceInDays } from 'date-fns';
+import { useDailyStore, itemsForDay } from '../store/dailyStore';
+import { usePrefsStore } from '../store/prefsStore';
+import { useHabitStore } from '../store/habitStore';
+import { useNow, useToday } from '../hooks/useNow';
+import { priorityStreak, stuckItems } from '../lib/selectors';
+import { startFocus } from '../lib/tasks';
+import { weekdayOf } from '../lib/dates';
+import FreshStartBanner from '../components/FreshStartBanner';
+import WhatNowPicker from '../components/WhatNowPicker';
+import { HabitsToday } from '../components/Habits';
+
+function TodayPanel({ today }: { today: string }) {
+  const navigate = useNavigate();
+  const { items: daily, days } = useDailyStore();
+  const { defaultFocusMinutes, streakWeekdays, shutdownHour } = usePrefsStore();
+  const habits = useHabitStore((s) => s.habits);
+  const hasHabits = habits.some((h) => !h.archived && h.days.includes(weekdayOf(today)));
+  const now = useNow(60_000);
+
+  const todays = itemsForDay(daily, today);
+  const active = todays.filter((i) => i.status === 'active');
+  const doneCount = todays.length - active.length;
+  const top = active[0];
+  const streak = priorityStreak(daily, days, streakWeekdays, today);
+  const stuck = stuckItems(daily, today);
+  const showShutdown = new Date(now).getHours() >= shutdownHour && !days[today]?.shutdownAt;
+
+  return (
+    <div className="space-y-3 mb-6">
+      <div className="card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <ListChecks size={18} className="text-blue-600" />
+          <p className="font-semibold text-gray-900 text-sm flex-1">Today's priorities</p>
+          {streak.current > 0 && (
+            <Link to="/progress" className="badge bg-orange-100 text-orange-700 gap-1">
+              <Flame size={12} /> {streak.current} day streak
+            </Link>
+          )}
+          {todays.length > 0 && (
+            <span className="text-xs text-gray-400">
+              {doneCount}/{todays.length} done
+            </span>
+          )}
+        </div>
+        {top ? (
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-400">{top.isFrog ? '🐸 Eat the frog' : 'Up next'}</p>
+              <Link to="/gtd-ivy-lee" className="font-semibold text-gray-900 leading-snug hover:text-blue-600">
+                {top.title}
+              </Link>
+              {top.firstStep && <p className="text-xs text-gray-500 mt-0.5">First step: {top.firstStep}</p>}
+            </div>
+            <button
+              className="btn-primary h-11 shrink-0"
+              onClick={() => {
+                startFocus({ title: top.title, minutes: defaultFocusMinutes, dailyItemId: top.id, gtdItemId: top.gtdItemId });
+                navigate('/focus');
+              }}
+            >
+              <Timer size={16} /> Start {defaultFocusMinutes} min
+            </button>
+          </div>
+        ) : todays.length > 0 ? (
+          <p className="text-sm text-green-700">All of today's priorities are done. 🎉</p>
+        ) : (
+          <Link to="/gtd-ivy-lee" className="flex items-center justify-between text-sm text-blue-600 font-medium">
+            Pick today's six from your Next Actions <ArrowRight size={15} />
+          </Link>
+        )}
+      </div>
+
+      {showShutdown && (
+        <Link
+          to="/shutdown"
+          className="flex items-center gap-3 p-4 rounded-xl bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 transition-colors"
+        >
+          <Moon size={20} className="shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-sm">Evening shutdown</p>
+            <p className="text-indigo-200 text-xs mt-0.5">Close today and set up tomorrow's six — about 5 minutes</p>
+          </div>
+          <ArrowRight size={16} className="shrink-0" />
+        </Link>
+      )}
+
+      {stuck.length > 0 && (
+        <Link
+          to="/progress?tab=insights"
+          className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800"
+        >
+          <AlertTriangle size={18} className="shrink-0" />
+          <p className="flex-1 text-sm">
+            <b>{stuck.length}</b> priorit{stuck.length === 1 ? 'y has' : 'ies have'} been on your list 3+ days.
+          </p>
+          <ArrowRight size={15} />
+        </Link>
+      )}
+
+      {hasHabits && (
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Repeat size={16} className="text-green-600" />
+            <p className="font-semibold text-gray-900 text-sm flex-1">Habits today</p>
+            <Link to="/progress?tab=habits" className="text-xs text-blue-600">All habits</Link>
+          </div>
+          <HabitsToday />
+        </div>
+      )}
+
+      <WhatNowPicker compact />
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { items, projects, getLastReview } = useGTDStore();
   const lastReview = getLastReview();
+  const today = useToday();
 
   const stats = {
     inbox: items.filter((i) => i.status === 'inbox').length,
@@ -115,6 +236,9 @@ export default function Dashboard() {
           Your GTD system at a glance — {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
       </div>
+
+      <FreshStartBanner today={today} />
+      <TodayPanel today={today} />
 
       {/* Weekly Review nudge */}
       {reviewDue && (

@@ -11,6 +11,8 @@ import {
   Clock,
   Star,
   CalendarDays,
+  TrendingUp,
+  Mountain,
 } from 'lucide-react';
 import { useGTDStore } from '../store/gtdStore';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -84,6 +86,29 @@ const STEPS = [
       'Review your Someday / Maybe list',
       'Is anything ready to become an active project or next action?',
       'Remove anything you no longer care about',
+    ],
+  },
+  {
+    id: 'review-progress',
+    title: 'Review Wins & Habits',
+    icon: TrendingUp,
+    link: { to: '/progress', label: 'Open Progress' },
+    items: [
+      'Look at your done list for the week — notice what you achieved',
+      'Check stuck priorities: break them down, delegate, or drop them',
+      'Which habits slipped? Restart one with a smaller version',
+      'Look at "Why you get stuck" — add an if-then plan for your top reason',
+    ],
+  },
+  {
+    id: 'review-horizons',
+    title: 'Review Goals & Horizons',
+    icon: Mountain,
+    link: { to: '/goals', label: 'Open Goals' },
+    items: [
+      'Does each active goal have at least one active project?',
+      'Are any areas of your life being neglected?',
+      'Is anything ready to be marked achieved — or let go?',
     ],
   },
   {
@@ -284,7 +309,12 @@ export default function WeeklyReview() {
           <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
             {StepIcon && <StepIcon size={20} className="text-blue-600" />}
           </div>
-          <h2 className="text-xl font-bold text-gray-900">{step.title}</h2>
+          <h2 className="text-xl font-bold text-gray-900 flex-1">{step.title}</h2>
+          {'link' in step && step.link && (
+            <Link to={step.link.to} className="text-xs font-medium text-blue-600 hover:underline">
+              {step.link.label} →
+            </Link>
+          )}
         </div>
 
         <div className="space-y-3">

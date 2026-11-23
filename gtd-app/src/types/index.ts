@@ -41,6 +41,10 @@ export interface GTDItem {
 
   // Completion
   completedAt?: string;
+
+  // Eisenhower matrix triage
+  urgent?: boolean;
+  important?: boolean;
 }
 
 export interface Project {
@@ -52,6 +56,10 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+
+  // Horizons of Focus linkage
+  goalId?: string;
+  areaId?: string;
 }
 
 export interface WeeklyReview {

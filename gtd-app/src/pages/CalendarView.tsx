@@ -8,10 +8,11 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useGTDStore } from '../store/gtdStore';
+import { completeNextAction } from '../lib/tasks';
 import { format, isToday, isPast, isFuture, parseISO } from 'date-fns';
 
 export default function CalendarView() {
-  const { items, completeItem, deleteItem, moveItem } = useGTDStore();
+  const { items, deleteItem, moveItem } = useGTDStore();
   const calItems = items.filter((i) => i.status === 'calendar');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -82,7 +83,7 @@ export default function CalendarView() {
             <div className="flex gap-2 pt-1">
               <button
                 className="btn-ghost py-1 px-3 text-xs text-green-600 hover:bg-green-50"
-                onClick={() => completeItem(item.id)}
+                onClick={() => completeNextAction(item.id)}
               >
                 <Check size={12} /> Mark done
               </button>

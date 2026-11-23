@@ -7,17 +7,25 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
+  Target,
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useGTDStore } from '../store/gtdStore';
+import { useHorizonsStore } from '../store/horizonsStore';
 import { format } from 'date-fns';
 
 export default function Projects() {
-  const { projects, items, addProject, completeProject, deleteProject } =
+  const { projects, items, addProject, completeProject, deleteProject, updateProject } =
     useGTDStore();
+  const goals = useHorizonsStore((s) => s.goals);
+  const activeGoals = goals.filter((g) => g.status === 'active');
+  const [params, setParams] = useSearchParams();
+  const goalParam = params.get('goal') ?? '';
+  const [goalId, setGoalId] = useState(goalParam);
   const activeProjects = projects.filter((p) => p.status === 'active');
   const completedProjects = projects.filter((p) => p.status === 'completed');
 
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(Boolean(goalParam));
   const [title, setTitle] = useState('');
   const [outcome, setOutcome] = useState('');
   const [notes, setNotes] = useState('');
@@ -27,11 +35,14 @@ export default function Projects() {
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    addProject(title.trim(), notes.trim(), outcome.trim());
+    const project = addProject(title.trim(), notes.trim(), outcome.trim());
+    if (goalId) updateProject(project.id, { goalId });
     setTitle('');
     setOutcome('');
     setNotes('');
+    setGoalId('');
     setShowAdd(false);
+    if (goalParam) setParams({});
   }
 
   function getNextActions(projectId: string) {
@@ -86,6 +97,16 @@ export default function Projects() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
+            {activeGoals.length > 0 && (
+              <select className="input" value={goalId} onChange={(e) => setGoalId(e.target.value)}>
+                <option value="">Supports a goal? (optional)</option>
+                {activeGoals.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    🎯 {g.title}
+                  </option>
+                ))}
+              </select>
+            )}
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
@@ -133,7 +154,12 @@ export default function Projects() {
                         "{project.outcome}"
                       </p>
                     )}
-                    <div className="flex items-center gap-2 mt-1.5">
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      {project.goalId && goals.find((g) => g.id === project.goalId) && (
+                        <span className="badge bg-emerald-50 text-emerald-700 gap-1">
+                          <Target size={10} /> {goals.find((g) => g.id === project.goalId)!.title}
+                        </span>
+                      )}
                       <span className="badge bg-purple-50 text-purple-600 text-xs">
                         {nextActions.length} next action{nextActions.length !== 1 ? 's' : ''}
                       </span>
@@ -161,6 +187,29 @@ export default function Projects() {
                         <span className="font-medium text-purple-700">Desired outcome: </span>
                         <span className="text-purple-600">{project.outcome}</span>
                       </div>
+                    )}
+
+                    {activeGoals.length > 0 && (
+                      <label className="flex items-center gap-2 text-xs text-gray-500" onClick={(e) => e.stopPropagation()}>
+                        <Target size={13} className="text-emerald-600" /> Supports goal
+                        <select
+                          className="input h-8 py-0 text-xs flex-1"
+                          value={project.goalId ?? ''}
+                          onChange={(e) => updateProject(project.id, { goalId: e.target.value || undefined })}
+                        >
+                          <option value="">None</option>
+                          {activeGoals.map((g) => (
+                            <option key={g.id} value={g.id}>
+                              {g.title}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {nextActions.length === 0 && (
+                      <p className="text-xs text-amber-700">
+                        No next action — a project without one is stalled. What's the very next step?
+                      </p>
                     )}
 
                     {nextActions.length > 0 && (
