@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Inbox,
   Zap,
@@ -19,12 +19,15 @@ import {
   Moon,
   TrendingUp,
   Mountain,
+  Navigation,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useGTDStore } from '../store/gtdStore';
 import { useDailyStore, itemsForDay } from '../store/dailyStore';
 import { useToday } from '../hooks/useNow';
 import { AppWatchers, TimerChip } from './FocusWatcher';
+import GuideBar from './GuideBar';
+import { usePrefsStore } from '../store/prefsStore';
 
 type NavItem = {
   to: string;
@@ -38,6 +41,7 @@ const navGroups: { title?: string; items: NavItem[] }[] = [
   {
     title: 'Today',
     items: [
+      { to: '/guide', label: 'Guide', icon: Navigation },
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
       { to: '/gtd-ivy-lee', label: 'GTD Ivy Lee', icon: ListChecks, badge: 'today' },
       { to: '/focus', label: 'Focus', icon: Timer },
@@ -85,6 +89,16 @@ export default function Layout({ children }: LayoutProps) {
   useEffect(() => {
     mainRef.current?.scrollTo(0, 0);
   }, [pathname]);
+
+  // Optionally open the app on the Guide (only on first load, so Dashboard stays reachable).
+  const navigate = useNavigate();
+  const startPage = usePrefsStore((s) => s.startPage);
+  const startHandled = useRef(false);
+  useEffect(() => {
+    if (startHandled.current) return;
+    startHandled.current = true;
+    if (startPage === 'guide' && pathname === '/') navigate('/guide', { replace: true });
+  }, [startPage, pathname, navigate]);
   const inboxCount = useGTDStore((s) => s.getInboxCount());
   const today = useToday();
   const todayLeft = useDailyStore((s) => itemsForDay(s.items, today).filter((i) => i.status === 'active').length);
@@ -182,6 +196,7 @@ export default function Layout({ children }: LayoutProps) {
         </header>
 
         <main ref={mainRef} className="flex-1 overflow-y-auto">
+          <GuideBar />
           {children}
         </main>
       </div>

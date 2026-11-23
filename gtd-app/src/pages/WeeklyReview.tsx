@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useGTDStore } from '../store/gtdStore';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 const STEPS = [
   {
@@ -127,7 +127,8 @@ export default function WeeklyReview() {
   const { weeklyReviews, addWeeklyReview, getLastReview, items, projects } = useGTDStore();
   const lastReview = getLastReview();
 
-  const [started, setStarted] = useState(false);
+  const [params] = useSearchParams();
+  const [started, setStarted] = useState(params.get('start') === '1');
   const [currentStep, setCurrentStep] = useState(0);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');

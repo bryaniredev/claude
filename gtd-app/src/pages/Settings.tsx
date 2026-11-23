@@ -445,6 +445,24 @@ function PreferencesCard() {
           </label>
         </div>
 
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="text-xs text-gray-500">Weekly Review day (Guide)</span>
+            <select className="input mt-1" value={p.weeklyReviewDay} onChange={(e) => p.setPrefs({ weeklyReviewDay: Number(e.target.value) })}>
+              {WEEKDAYS.map((d, i) => (
+                <option key={d} value={i}>{d} afternoon</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs text-gray-500">Open the app on</span>
+            <select className="input mt-1" value={p.startPage} onChange={(e) => p.setPrefs({ startPage: e.target.value as 'dashboard' | 'guide' })}>
+              <option value="dashboard">Dashboard</option>
+              <option value="guide">Guide</option>
+            </select>
+          </label>
+        </div>
+
         <div>
           <span className="text-xs text-gray-500">Days your priority streak counts (other days never break it)</span>
           <div className="grid grid-cols-7 gap-1 mt-1">

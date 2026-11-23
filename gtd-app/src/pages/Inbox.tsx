@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import MindSweep from '../components/MindSweep';
 import { Plus, Inbox as InboxIcon, ArrowRight, Trash2 } from 'lucide-react';
 import { useGTDStore } from '../store/gtdStore';
 import type { GTDItem } from '../types';
@@ -12,12 +14,35 @@ export default function Inbox() {
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [showNotes, setShowNotes] = useState(false);
-  const [clarifyItem, setClarifyItem] = useState<GTDItem | null>(null);
+  const [params] = useSearchParams();
+  const sweeping = params.get('sweep') === '1';
+  // Guided processing: open the first item, then each next one as you finish.
+  const [processing, setProcessing] = useState(params.get('process') === '1');
+  const [clarifyItem, setClarifyItem] = useState<GTDItem | null>(() =>
+    params.get('process') === '1' ? useGTDStore.getState().items.find((i) => i.status === 'inbox') ?? null : null
+  );
+  const [sweepCount, setSweepCount] = useState(0);
+
+  function handleCloseClarify() {
+    const closed = clarifyItem;
+    setClarifyItem(null);
+    if (!processing || !closed) return;
+    const fresh = useGTDStore.getState().items;
+    // Closed without clarifying → stop the run.
+    if (fresh.find((i) => i.id === closed.id)?.status === 'inbox') {
+      setProcessing(false);
+      return;
+    }
+    const next = fresh.find((i) => i.status === 'inbox');
+    if (next) setClarifyItem(next);
+    else setProcessing(false);
+  }
 
   function handleCapture(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     addItem(title.trim(), notes.trim());
+    setSweepCount((n) => n + 1);
     setTitle('');
     setNotes('');
     setShowNotes(false);
@@ -40,6 +65,8 @@ export default function Inbox() {
           </span>
         )}
       </div>
+
+      {sweeping && <MindSweep captured={sweepCount} />}
 
       {/* Capture form */}
       <div className="card p-4 mb-6">
@@ -124,7 +151,10 @@ export default function Inbox() {
 
           {inboxItems.length > 1 && (
             <button
-              onClick={() => setClarifyItem(inboxItems[0])}
+              onClick={() => {
+                setProcessing(true);
+                setClarifyItem(inboxItems[0]);
+              }}
               className="btn-primary w-full mt-4 justify-center"
             >
               Process next item <ArrowRight size={16} />
@@ -135,7 +165,7 @@ export default function Inbox() {
 
       {/* Clarify Modal */}
       {clarifyItem && (
-        <ClarifyModal item={clarifyItem} onClose={() => setClarifyItem(null)} />
+        <ClarifyModal key={clarifyItem.id} item={clarifyItem} onClose={handleCloseClarify} />
       )}
     </div>
   );

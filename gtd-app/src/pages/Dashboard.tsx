@@ -6,6 +6,7 @@ import {
   Moon,
   AlertTriangle,
   Repeat,
+  Navigation,
   Inbox,
   Zap,
   FolderKanban,
@@ -28,6 +29,27 @@ import { weekdayOf } from '../lib/dates';
 import FreshStartBanner from '../components/FreshStartBanner';
 import WhatNowPicker from '../components/WhatNowPicker';
 import { HabitsToday } from '../components/Habits';
+import { useGuide } from '../hooks/useGuide';
+
+function GuideCard() {
+  const { current } = useGuide();
+  if (!current) return null;
+  return (
+    <Link
+      to="/guide"
+      className="flex items-center gap-3 p-4 rounded-2xl mb-4 bg-gray-900 text-white shadow-sm hover:bg-gray-800 transition-colors"
+    >
+      <Navigation size={20} className="shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-gray-400">Not sure what to do? Your next step:</p>
+        <p className="font-semibold text-sm leading-snug">{current.title}</p>
+      </div>
+      <span className="shrink-0 text-xs font-semibold flex items-center gap-1">
+        Guide me <ArrowRight size={14} />
+      </span>
+    </Link>
+  );
+}
 
 function TodayPanel({ today }: { today: string }) {
   const navigate = useNavigate();
@@ -237,6 +259,7 @@ export default function Dashboard() {
         </p>
       </div>
 
+      <GuideCard />
       <FreshStartBanner today={today} />
       <TodayPanel today={today} />
 
